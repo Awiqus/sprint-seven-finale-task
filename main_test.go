@@ -54,7 +54,7 @@ func TestCafeNegative(t *testing.T) {
 func TestCafeCount(t *testing.T) {
 	handler := http.HandlerFunc(mainHandle)
 
-	requsets := []struct {
+	requests := []struct {
 		count int
 		want  int
 	}{
@@ -64,22 +64,20 @@ func TestCafeCount(t *testing.T) {
 		{count: 100, want: 5},
 	}
 
-	for _, v := range requsets {
+	for _, v := range requests {
 		response := httptest.NewRecorder()
 		requset := "/cafe?city=moscow&count=" + strconv.Itoa(v.count)
 		req := httptest.NewRequest("GET", requset, nil)
 		handler.ServeHTTP(response, req)
+		require.Equal(t, http.StatusOK, response.Code)
 
 		body := strings.TrimSpace(response.Body.String())
 		if body == "" {
 			assert.Equal(t, 0, v.want)
 		} else {
 			cafes := strings.Split(body, ",")
-			cafesLen := len(cafes)
-			assert.Equal(t, v.want, cafesLen)
+			assert.Len(t, cafes, v.want)
 		}
-
-		require.Equal(t, http.StatusOK, response.Code)
 	}
 }
 
@@ -100,6 +98,7 @@ func TestCafeSearch(t *testing.T) {
 		str := "/cafe?city=moscow&search=" + v.search
 		req := httptest.NewRequest("GET", str, nil)
 		handler.ServeHTTP(resp, req)
+		require.Equal(t, http.StatusOK, resp.Code)
 
 		s := strings.ToLower(v.search)
 		body := resp.Body.String()
@@ -110,11 +109,10 @@ func TestCafeSearch(t *testing.T) {
 		}
 		body = strings.ToLower(body)
 
-		require.Equal(t, http.StatusOK, resp.Code)
 		sliceCafe := strings.Split(body, ",")
 		for _, j := range sliceCafe {
-			assert.Contains(t, j, s)
+			assert.Contains(t, strings.ToLower(j), s)
 		}
-		assert.Equal(t, v.wantCount, len(sliceCafe))
+		assert.Len(t, sliceCafe, v.wantCount)
 	}
 }
